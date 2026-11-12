@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TDH Calculator Tests</title>
+  <style>
+    body { font: 14px "Segoe UI", Arial, sans-serif; margin: 24px; color: #0c222e; background: #fff; }
+    h1 { font-size: 20px; margin: 0 0 8px; }
+    .pass { color: #006738; font-weight: 700; }
+    .fail { color: #c62828; font-weight: 700; }
+    li { margin: 3px 0; font-family: Consolas, monospace; font-size: 12.5px; }
+    #app { display: none; }
+    table.ref { border-collapse: collapse; font-size: 12.5px; margin: 6px 0 16px; }
+    table.ref th, table.ref td { border: 1px solid #dde7e9; padding: 4px 8px; vertical-align: top; text-align: left; }
+    table.ref .src { color: #4f6470; font-size: 11.5px; max-width: 520px; margin-top: 2px; }
+  </style>
+</head>
+<body>
+  <h1>TDH &amp; Flow Calculator: automated tests</h1>
+  <p>Runs every system type through the option matrix, invalid inputs, trend checks and pump library checks. Each result is compared with independent hand-calculation formulas and with the generated report.</p>
+  <div id="out">Running…</div>
+
+  <!-- hidden copy of the app elements that js/app.js expects -->
+  <div id="app">
+    <div class="tabs"></div><span id="projTitle"></span><span id="saveState"></span>
+    <button id="btnNew"></button><button id="btnSave"></button><button id="btnExport"></button><button id="btnPrint"></button>
+    <main><section id="page-start"></section><section id="page-params"></section><section id="page-chart"></section><section id="page-report"></section></main>
+    <input type="file" id="fileOpen"><input type="file" id="pumpImport"><dialog id="pumpDialog"></dialog><div id="toast"></div>
+  </div>
+
+  <script src="../js/calc.js"></script>
+  <script src="../js/pump-data.js"></script>
+  <script src="../js/chart.js"></script>
+  <script src="../js/diagram.js"></script>
+  <script src="../js/report.js"></script>
+  <script src="../js/app.js"></script>
+  <script src="reference-cases.js"></script>
+  <script src="tests.js"></script>
+  <script>
+    const r = TDHTests.run();
+    const esc = s => String(s).replace(/[&<]/g, c => c === '&' ? '&amp;' : '&lt;');
+    const fx = (x, d) => Number.isFinite(x) ? x.toFixed(d) : '—';
+    const refTable = r.refs.length ? `<h3>Reference cases (outside answers)</h3>
+      <p>Active cases must match within tolerance. Pending cases are listed for review and do not fail the suite. Add cases in <code>tests/reference-cases.js</code>.</p>
+      <table class="ref"><thead><tr><th>Case</th><th>Status</th><th>Value</th><th>Expected</th><th>Calculated</th><th>Difference</th><th>Result</th></tr></thead><tbody>` +
+      r.refs.map(c => c.rows.map((x, i) => `<tr>${i === 0 ? `<td rowspan="${c.rows.length}"><b>${esc(c.id)}</b> ${esc(c.title)}<div class="src">${esc(c.source)}${c.why ? '<br>Difference explained: ' + esc(c.why) : ''}</div></td><td rowspan="${c.rows.length}">${esc(c.status)}</td>` : ''}<td>${x.k}</td><td>${x.exp}</td><td>${fx(x.got, 3)}</td><td>${fx(x.diff, 3)} (${fx(x.pct, 1)}%)</td><td class="${x.ok ? 'pass' : c.status === 'active' ? 'fail' : ''}">${x.ok ? 'within tolerance' : 'outside tolerance'}</td></tr>`).join('')).join('') +
+      `</tbody></table>` : '';
+    document.getElementById('out').innerHTML =
+      `<p class="${r.fails.length ? 'fail' : 'pass'}">${r.fails.length ? r.fails.length + ' FAILED' : 'ALL PASSED'}: ${r.checks} checks across ${r.scenarios} scenarios (${r.ms} ms). Calculator version ${esc(r.version)}.</p>` +
+      (r.fails.length ? `<h3>Failures</h3><ul>${r.fails.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : '') + refTable +
+      (r.notes.length ? `<h3>Notes</h3><ul>${r.notes.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : '');
+    window.__testResult = r;
+  </script>
+</body>
+</html>

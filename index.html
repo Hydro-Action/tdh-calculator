@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hydro-Action TDH &amp; Flow Calculator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@500;600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <header class="appbar no-print">
+    <div class="brand">
+      <!-- Logo: local img/logo.svg if present, otherwise the logo from hydro-action.com, otherwise a text wordmark -->
+      <img class="brand-logo" id="brandLogo" src="img/logo.svg" alt="Hydro-Action"
+        onload="window.HA_LOGO=this.src;document.documentElement.classList.add('has-logo')"
+        onerror="if(!this.dataset.tried){this.dataset.tried=1;this.src='https://hydro-action.com/wp-content/uploads/2025/03/hydro-action-logo.svg'}else{this.remove()}">
+      <span class="wordmark brand-name"><span class="wm-h">hydro</span><span class="wm-dot">·</span><span class="wm-a">action</span></span>
+      <div class="brand-text">
+        <div class="brand-title">TDH &amp; Flow Calculator<span class="app-ver" id="appVer"></span></div>
+        <div class="brand-sub" id="projTitle">Untitled project</div>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="start">Start</button>
+      <button class="tab" data-tab="params">Parameters</button>
+      <button class="tab" data-tab="chart">Chart</button>
+      <button class="tab" data-tab="report">Report</button>
+    </nav>
+    <div class="actions">
+      <span class="savestate" id="saveState"></span>
+      <button class="btn ghost" id="btnNew" title="New project">New</button>
+      <button class="btn ghost" id="btnSave" title="Save to this computer's project list (Ctrl+S)">Save</button>
+      <button class="btn ghost" id="btnExport" title="Download the project as a .tdh.json file">Export</button>
+      <button class="btn primary" id="btnPrint" title="Print or save the report as PDF">Print report</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="page active" id="page-start"></section>
+    <section class="page" id="page-params"></section>
+    <section class="page" id="page-chart"></section>
+    <section class="page" id="page-report"></section>
+  </main>
+
+  <input type="file" id="fileOpen" accept=".json,.tdh,application/json" hidden>
+  <input type="file" id="pumpImport" accept=".json,application/json" hidden>
+  <dialog id="pumpDialog"></dialog>
+  <div class="toast" id="toast"></div>
+
+  <script src="js/calc.js"></script>
+  <script src="js/pump-data.js"></script>
+  <script src="js/chart.js"></script>
+  <script src="js/diagram.js"></script>
+  <script src="js/report.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
