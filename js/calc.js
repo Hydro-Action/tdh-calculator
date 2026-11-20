@@ -724,8 +724,8 @@
         else if (g.v < vMin && g.key !== 'discharge') add('info', `${sc.label}: velocity in the ${g.label.toLowerCase()} is ${g.v.toFixed(1)} ft/s, below the ${vMin} ft/s scouring guideline. Solids and biological growth can accumulate in the pipe at low velocity; this matters less if the force main drains back after each dose.`);
       });
       if (sc.manInlet && sc.manInlet.v > vMax) {
-        const mi = sc.manInlet, est = 2.7 * mi.hv, term = s.systemType === 'spray' ? 'header' : 'manifold';
-        add('warn', `${sc.label}: the ${term} inlet velocity is ${mi.v.toFixed(1)} ft/s, above the ${vMax} ft/s guideline. At this velocity, inlet fittings (for example an elbow plus a tee, K ≈ 2.7) add about ${est.toFixed(1)} ft, which this calculation does not include. Increase the ${term} size, or enter the inlet fitting loss as a supplemental device loss.`);
+        const mi = sc.manInlet, term = s.systemType === 'spray' ? 'header' : 'manifold';
+        add('warn', `${sc.label}: the ${term} inlet velocity is ${mi.v.toFixed(1)} ft/s, above the ${vMax} ft/s guideline. Increase the ${term} size.`);
       }
       const transport = sc.segs.filter(g => g.key !== 'discharge').reduce((t, g) => t + g.total, 0);
       if (sc.TDH > 0 && transport / sc.TDH > 0.4) add('warn', `${sc.label}: the force main head loss (${transport.toFixed(1)} ft) is more than 40% of the TDH (${sc.TDH.toFixed(1)} ft). To reduce it, increase the pipe diameter, change the pipe class/schedule (if allowed), or reduce the flow rate.`);

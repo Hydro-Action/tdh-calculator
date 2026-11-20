@@ -284,10 +284,8 @@
   function minorLossNote(S, R) {
     const t = S.systemType;
     if (!R.design.net) return '';
-    const parts = t === 'spray' ? 'at the header inlet, line connections, and head risers' : t === 'drip' ? 'at the supply manifold inlet and dripline connections' : 'at the manifold inlet and lateral connections';
-    const mi = R.scenarios.filter(s => s.manInlet).map(s => `${R.scenarios.length > 1 ? s.label.toLowerCase() + ' ' : ''}${f(s.manInlet.v, 1)} ft/s (v²/2g = ${f(s.manInlet.hv, 2)} ft)`);
-    const vtxt = mi.length ? ` The ${t === 'spray' ? 'header' : 'manifold'} inlet velocity is ${mi.join('; ')}, so each unit of K at the inlet would add v²/2g of head.` : '';
-    return `<li>Minor (fitting) losses ${parts} are not included. These are typically small compared with the residual head and pipe friction.${vtxt} Where they are significant, they may be entered as supplemental device losses.</li>`;
+    const parts = t === 'spray' ? 'within the header, at line connections, and at head risers' : t === 'drip' ? 'within the supply manifold and at dripline connections' : 'within the manifold and at lateral connections';
+    return `<li>Fittings up to the ${t === 'spray' ? 'header' : 'manifold'} inlet are included with the force main fittings. Minor (fitting) losses ${parts} are small compared with the residual head and pipe friction and are not included.</li>`;
   }
 
   function distributionSection(S, R, sec) {
