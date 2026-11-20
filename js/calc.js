@@ -12,8 +12,8 @@
   // ---------------------------------------------------------------- version
   // Change both on every release and add an entry to CHANGELOG.md. The version is printed on every report so a
   // sealed report can be traced to the calculator release that produced it.
-  const VERSION = '1.0.0';
-  const RELEASE_DATE = '2026-11-12';
+  const VERSION = '2.0.0';
+  const RELEASE_DATE = '2026-11-20';
 
   // ---------------------------------------------------------------- constants
   const G = 32.174;             // ft/s^2
