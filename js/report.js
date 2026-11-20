@@ -77,9 +77,10 @@
     out.push(tbl([['Fitting'], ['K', 'n']], C.FITTINGS.map(x => tr([x.label, [f(n(set.K[x.k]), 2), 'n']]))));
     out.push(kv([
       ['Friction method', set.method === 'DW' ? 'Darcy-Weisbach' : 'Hazen-Williams'],
-      ['Safety factor applied to force main losses', f(n(set.frictionSF), 0) + ' %'],
+      ...(n(set.frictionSF) ? [['Safety factor applied to force main losses', f(n(set.frictionSF), 0) + ' %']] : []),
       ['Velocity guideline (force main)', `${f(n(set.vMin), 1)} – ${f(n(set.vMax), 1)} ft/s`]
     ]));
+    out.push(`<p class="small">The velocity guideline is a design check, not part of the TDH. The minimum keeps solids from settling in the pipe; the maximum limits surge (water hammer) pressure when the pump starts and stops. Friction loss at the actual velocity is included in the TDH.</p>`);
 
     // ---------------- 3. distribution
     let sec = 3;

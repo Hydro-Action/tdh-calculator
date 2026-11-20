@@ -686,8 +686,7 @@
     ['spray.reqP', 'Minimum pressure at last head', 'psi', 10, 100, 'Pressure is entered in psi.', 'spray'],
     ['spray.spacing', 'Spacing between heads', 'ft', 0, 150, '', 'spray'],
     ['dose.drawdownIn', 'Float drawdown height', 'in', 2, 48, 'Drawdown height is entered in inches.', '', s => s.dose.mode === 'demand'],
-    ['dose.galPerIn', 'Pump tank volume per inch', 'gal/in', 5, 500, '', '', s => s.dose.mode === 'timed' && num(s.dose.galPerIn) > 0],
-    ['settings.cPVC', 'Hazen-Williams C', '', 100, 155, 'C = 150 is typical for PVC; lower values apply to older or rougher pipe.', '', s => s.settings.method !== 'DW']
+    ['dose.galPerIn', 'Pump tank volume per inch', 'gal/in', 5, 500, '', '', s => s.dose.mode === 'timed' && num(s.dose.galPerIn) > 0]
   ];
   function plausibility(s, R) {
     const out = [];
@@ -721,8 +720,8 @@
     R.scenarios.forEach(sc => {
       sc.segs.forEach(g => {
         if (g.L <= 0) return;
-        if (g.v > vMax) add('warn', `${sc.label}: velocity in the ${g.label.toLowerCase()} is ${g.v.toFixed(1)} ft/s, above the ${vMax} ft/s guideline. Increase the pipe size or reduce the flow rate.`);
-        else if (g.v < vMin && g.key !== 'discharge') add('info', `${sc.label}: velocity in the ${g.label.toLowerCase()} is ${g.v.toFixed(1)} ft/s, below the ${vMin} ft/s scouring guideline.`);
+        if (g.v > vMax) add('warn', `${sc.label}: velocity in the ${g.label.toLowerCase()} is ${g.v.toFixed(1)} ft/s, above the ${vMax} ft/s guideline. The friction loss at this velocity is included in the TDH; the guideline limits surge (water hammer) pressure when the pump starts and stops. Increase the pipe size or reduce the flow rate.`);
+        else if (g.v < vMin && g.key !== 'discharge') add('info', `${sc.label}: velocity in the ${g.label.toLowerCase()} is ${g.v.toFixed(1)} ft/s, below the ${vMin} ft/s scouring guideline. Solids and biological growth can accumulate in the pipe at low velocity; this matters less if the force main drains back after each dose.`);
       });
       if (sc.manInlet && sc.manInlet.v > vMax) {
         const mi = sc.manInlet, est = 2.7 * mi.hv, term = s.systemType === 'spray' ? 'header' : 'manifold';

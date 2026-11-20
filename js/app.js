@@ -53,7 +53,10 @@
     return over === undefined ? base : over;
   }
 
-  let S = merge(defaultState(), LS.get(KEY_CUR, {}));
+  // Design settings (friction method, C, K-values, velocity guidelines) are fixed at the standard values in
+  // defaultState(); they are not user inputs. Values saved in older projects are replaced on load.
+  const withState = st => Object.assign(merge(defaultState(), st), { settings: defaultState().settings });
+  let S = withState(LS.get(KEY_CUR, {}));
   let R = null;
   let dirty = false;
   let selectedRecent = null;
@@ -304,7 +307,6 @@
       <td><div class="inp"><input type="number" step="any" data-path="addons.${i}.val" data-type="num" value="${esc(a.val)}"><select data-path="addons.${i}.unit" style="width:auto;border-left:1px solid var(--border);background:var(--surface-2)"><option ${a.unit === 'ft' ? 'selected' : ''}>ft</option><option ${a.unit === 'psi' ? 'selected' : ''}>psi</option></select></div></td>
       <td><div class="inp" title="Flow at which this loss was read (blank = design flow)"><input type="number" step="any" data-path="addons.${i}.q" data-type="num" value="${esc(a.q)}" placeholder="Q ref"><span class="unit">gpm</span></div></td>
       <td><button class="linkbtn" data-rmaddon="${i}" title="Remove">✕</button></td></tr>`).join('');
-    const K = C.FITTINGS.map(f => fNum('settings.K.' + f.k, 'K — ' + f.label, '')).join('');
     $('#page-params').innerHTML = `
       <div class="card diagram-card"><details id="diagDetails" ${diagOpen ? 'open' : ''}><summary class="card-h">▸ System diagram<span class="spacer"></span><span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--faint)">updates as you edit</span></summary><div class="card-b diagbox" id="diagBox"></div></details></div>
       <div class="grid-params">
@@ -351,23 +353,12 @@
               ${fNum('dose.galPerIn', 'Pump tank volume per inch (optional)', 'gal/in', { help: 'From the tank manufacturer\'s chart, in the operating range. Leave blank to skip the tank drawdown calculation.' })}`}
             ${fChk('dose.drainback', 'The force main (pump to valve) drains back to the pump tank after each dose')}
             ${S.systemType === 'lpd' ? fNum('dose.minMult', 'Minimum dose as a multiple of lateral volume', '×') : ''}`)}
-          <div class="card"><details><summary class="card-h" style="cursor:pointer;list-style:none">▸ Design settings &amp; coefficients</summary><div class="card-b">
-            ${fSel('settings.method', 'Friction method', [['HW', 'Hazen-Williams'], ['DW', 'Darcy-Weisbach (Swamee-Jain)']], { rerender: true })}
-            ${S.settings.method === 'HW' ? fNum('settings.cPVC', 'Hazen-Williams C (PVC)', '') : fNum('settings.eps', 'Pipe roughness ε', 'ft')}
-            ${fNum('settings.frictionSF', 'Safety factor on force main losses', '%')}
-            ${fNum('settings.vMin', 'Minimum velocity guideline', 'ft/s')}
-            ${fNum('settings.vMax', 'Maximum velocity guideline', 'ft/s')}
-            ${sub('Fitting loss coefficients (h = K·v²/2g)')}
-            ${K}
-            <button class="btn small" id="resetK">Reset K values</button>
-          </div></details></div>
         </div>
         <div id="colCalc"></div>
         <div id="colStatic"></div>
       </div>`;
     $('#addAddon').onclick = () => { S.addons.push({ label: '', val: 0, unit: 'ft' }); changed(true); };
     $$('[data-rmaddon]').forEach(b => b.onclick = () => { S.addons.splice(+b.dataset.rmaddon, 1); changed(true); });
-    $('#resetK').onclick = () => { C.FITTINGS.forEach(f => { S.settings.K[f.k] = f.K; }); changed(true); };
     renderResults();
   }
 
@@ -834,7 +825,7 @@
     if (currentTab === 'start') renderStart();
   }
   function loadState(st) {
-    S = merge(defaultState(), st);
+    S = withState(st);
     if (!S.id) S.id = uid();
     findResult = null; dirty = false;
     LS.set(KEY_CUR, S);

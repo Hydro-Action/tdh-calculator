@@ -24,7 +24,7 @@ Saved projects and user-added pumps are stored in the browser for the address th
 | Discharge: outfall or sewer main | **Open outfall:** head at the outlet = tailwater + exit loss (K·v²/2g). **Pressurized sewer main tie-in:** designed to the main's maximum pressure at the connection. It also checks the required pump shutoff head and, if a minimum pressure is entered, the pump runout point on a second system curve |
 | Other device | Any device with a known flow and pressure requirement |
 
-Friction is calculated with Hazen-Williams (default, C = 150 PVC) or Darcy-Weisbach. Fittings use K-values (editable under *Design settings*).
+Friction is calculated with Hazen-Williams, C = 150 for PVC. Fittings use the standard K-values listed in the report (90° elbow 0.9, 45° elbow 0.4, tee run 0.6, tee branch 1.8, open ball/gate valve 0.2, swing check 2.5, union/coupling 0.08). Velocity guidelines are 2 ft/s minimum (scouring) and 5 ft/s maximum (surge); they raise cautions and do not change the TDH. These values are fixed and are not user inputs; they are set in `defaultState()` in `js/app.js` and `FITTINGS` in `js/calc.js`. Projects saved with other values are recalculated with these when opened.
 Indexing valve and supplemental device losses (flow meters, filters, regulators, etc.) are entered at a reference flow and scaled by (Q/Qref)².
 
 ## Saving
