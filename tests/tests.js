@@ -300,8 +300,17 @@
       ['LPD large variation', 'lpd', s => { s.lpd.latLen = 120; s.lpd.latPipe.nom = '1'; }, /exceeds the 10% design limit/],
       ['drip inlet over max pressure', 'drip', s => { s.drip.maxP = 12; }, /exceeds the 12 psi maximum/],
       ['negative static head', 'gravity', s => { s.lift = -4; }, /siphoning/],
-      ['submerged outfall', 'discharge', s => { s.discharge.tailwater = 2; }, /flap gate/]
+      ['submerged outfall', 'discharge', s => { s.discharge.tailwater = 2; }, /flap gate/],
+      ['LPD dose below minimum multiple', 'lpd', s => { s.dose.minMult = 5; s.dose.dosesPerDay = 40; }, /less than 5 × the lateral volume/],
+      ['LPD demand: minimum drawdown stated', 'lpd', s => { s.dose.minMult = 5; s.dose.mode = 'demand'; s.dose.drawdownGal = ''; }, /drawdown volume must be at least/]
     ];
+    // minimum dose multiple of 0 (the default) turns the minimum dose check off
+    {
+      const s = base('lpd'); s.dose.dosesPerDay = 40; const R = C.compute(s);
+      check(s.dose.minMult === 0 && R.dose.minDose === null && !R.checks.some(c => /lateral volume/.test(c.text)), 'minimum dose off', 'minimum dose check raised with a multiple of 0');
+      const h = txt(Report.build(s, R, null)).textContent;
+      check(!/Minimum dose/.test(h), 'minimum dose off', 'report shows a minimum dose with a multiple of 0');
+    }
     cautions.forEach(([name, type, f, re]) => {
       const s = base(type); f(s);
       const R = C.compute(s);

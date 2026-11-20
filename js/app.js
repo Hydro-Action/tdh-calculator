@@ -38,7 +38,7 @@
       gravity: { desc: 'Distribution box', Q: 20, resid: 2, unit: 'ft' },
       other: { desc: '', Q: 10, resid: 20, unit: 'ft' },
       discharge: { mode: 'outfall', desc: '', Q: 20, tailwater: 0, exitK: 1, pMax: 20, pMin: '' },
-      dose: { mode: 'timed', gpd: 480, dosesPerDay: 4, zones: 1, drainback: true, galPerIn: 0, drawdownIn: 4, drawdownGal: 120, minMult: 5 },
+      dose: { mode: 'timed', gpd: 480, dosesPerDay: 4, zones: 1, drainback: true, galPerIn: 0, drawdownIn: 4, drawdownGal: 120, minMult: 0 },
       settings: { method: 'HW', cPVC: 150, eps: 0.000005, frictionSF: 0, vMin: 2, vMax: 5, K },
       chart: { selected: [], findQ: '', findH: '', findPct: 0, findCat: '' }
     };
@@ -354,7 +354,7 @@
               ${fNum('dose.dosesPerDay', 'Doses per zone per day', '', { help: 'The timer spreads the daily flow evenly over this many doses.' })}
               ${fNum('dose.galPerIn', 'Pump tank volume per inch (optional)', 'gal/in', { help: 'From the tank manufacturer\'s chart, in the operating range. Leave blank to skip the tank drawdown calculation.' })}`}
             ${fChk('dose.drainback', 'The force main (pump to valve) drains back to the pump tank after each dose')}
-            ${S.systemType === 'lpd' ? fNum('dose.minMult', 'Minimum dose as a multiple of lateral volume', '×') : ''}`)}
+            ${S.systemType === 'lpd' ? fNum('dose.minMult', 'Minimum dose as a multiple of lateral volume', '×', { help: 'Enter 0 for no minimum dose check.' }) : ''}`)}
         </div>
         <div id="colCalc"></div>
         <div id="colStatic"></div>

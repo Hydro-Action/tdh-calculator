@@ -523,8 +523,8 @@
     const mode = d.mode === 'demand' ? 'demand' : 'timed';
     const out = { mode, gpd, zones, valid: false };
     out.drainback = d.drainback ? vol.beforeValve : 0;
-    out.minMult = num(d.minMult, 5);
-    out.minDose = s.systemType === 'lpd' ? out.minMult * vol.laterals : null;
+    out.minMult = num(d.minMult, 0);
+    out.minDose = s.systemType === 'lpd' && out.minMult > 0 ? out.minMult * vol.laterals : null; // 0 = no minimum dose check
     // Minimum volume that must be pumped per dose (a volume requirement only; float heights depend on the tank)
     out.minGross = out.minDose !== null ? out.minDose + out.drainback : null;
     if (!(gpd > 0)) return out;
