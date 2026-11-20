@@ -3,7 +3,10 @@
 Pump sizing (design flow + total dynamic head) for wastewater dispersal systems, with a printable calculation report.
 
 ## Running it
-Double-click `index.html`. It opens in your web browser and needs no installation or internet connection. Edge or Chrome is recommended.
+- **Online:** https://hydro-action.github.io/tdh-calculator/ (always the current release).
+- **Offline:** download or copy the folder and double-click `index.html`. It opens in your web browser and needs no installation or internet connection. Edge or Chrome is recommended.
+
+Saved projects and user-added pumps are stored in the browser for the address the calculator was opened from. The online copy and an offline copy keep separate lists; use **Export** to move a project between them.
 
 ## Tabs
 - **Start**: recent projects, New / Open / Browse, project information, project type, and system type.
@@ -49,6 +52,23 @@ Values that are valid but outside the usual range for onsite dispersal raise a *
 
 ## Versions
 The version number and release date are set at the top of `js/calc.js` and printed in the app header, the report header, and the report footer, so a printed report can be traced to the calculator release that produced it. Exported project files record the version they were saved with. `CHANGELOG.md` lists each release and the release procedure.
+
+## Publishing
+The source is at https://github.com/Hydro-Action/tdh-calculator (public). GitHub Pages publishes the `main` branch to https://hydro-action.github.io/tdh-calculator/ about a minute after each push. Users get the new version the next time they load the page.
+
+To publish a change (a new pump, a fix):
+1. Make the change and run `tests/run.html`. All checks must pass.
+2. Follow the release steps in `CHANGELOG.md` (version number, `?v=` links, changelog entry).
+3. Commit and push:
+   ```
+   git add -A
+   git commit -m "Describe the change"
+   git tag v1.0.1
+   git push --follow-tags
+   ```
+To work on a change without publishing it, commit on a separate branch (`git switch -c my-change`) and merge it into `main` when it is ready.
+
+The manufacturer spec sheets in `Pumps` are kept on the local computer only (they are listed in `.gitignore`), because they are the manufacturers' documents. `js/pump-data.js` records the source document for each built-in pump.
 
 ## Tests
 `tests/run.html` runs the automated test suite (`tests/tests.js`). It must be opened through a local web server, the same way the app is previewed. The suite covers:

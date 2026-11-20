@@ -10,7 +10,7 @@ Every report prints the calculator version that produced it. Each release below 
    - minor (1.**x**.0): new inputs, system types, checks or pumps; existing results unchanged
    - major (**x**.0.0): a change that moves the result of an existing design (method, constant, default K-value or C-factor)
 4. Add an entry below. For a major change, list which results move and by how much.
-5. Commit, and tag the commit with the version (`git tag v1.0.0`).
+5. Commit, tag the commit with the version (`git tag v1.0.1`), and push (`git push --follow-tags`). GitHub Pages publishes the new version about a minute later.
 
 ## 1.0.0 (2026-11-12)
 First numbered release.
