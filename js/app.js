@@ -868,5 +868,6 @@
   { const v = document.getElementById('appVer'); if (v) { v.textContent = 'v' + C.VERSION; v.title = 'Released ' + C.RELEASE_DATE; } }
   window.TDHApp = { getState: () => S, getResult: () => R, defaultState };
   recompute();
-  showTab('start');
+  // A link ending in #params, #chart or #report opens that tab.
+  { const h = location.hash.slice(1); showTab(['start', 'params', 'chart', 'report'].includes(h) ? h : 'start'); }
 })();

@@ -7,7 +7,8 @@
   const f = (x, d = 2) => Number.isFinite(x) ? (Math.abs(x) < 0.5 * Math.pow(10, -d) ? 0 : x).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }) : '—';
   const n = (x) => Number.isFinite(+x) ? +x : 0;
 
-  const tbl = (head, rows, o = {}) => `<table class="${o.cls || ''}">${head ? `<thead><tr>${head.map(h => `<th class="${h[1] || ''}">${h[0]}</th>`).join('')}</tr></thead>` : ''}<tbody>${rows.join('')}</tbody></table>`;
+  // Tables of up to 24 rows are kept whole on one printed page; longer tables split, with the header row repeated.
+  const tbl = (head, rows, o = {}) => `<table class="${[o.cls || '', rows.length <= 24 ? 'keep' : ''].join(' ').trim()}">${head ? `<thead><tr>${head.map(h => `<th class="${h[1] || ''}">${h[0]}</th>`).join('')}</tr></thead>` : ''}<tbody>${rows.join('')}</tbody></table>`;
   const tr = (cells, cls) => `<tr class="${cls || ''}">${cells.map(c => Array.isArray(c) ? `<td class="${c[1] || ''}">${c[0]}</td>` : `<td>${c}</td>`).join('')}</tr>`;
   const kv = rows => tbl(null, rows.map(r => tr([r[0], [r[1], 'n']])), { cls: 'kv' });
   const eq = (expr, where) => `<div class="eq">${expr}${where ? `<div class="w">${where}</div>` : ''}</div>`;
@@ -17,6 +18,9 @@
     const info = S.info || {};
     const sysName = C.SYSTEM_TYPES[S.systemType];
     out.push(`<div class="rpt">`);
+    // Printed page footer: project name on the left, page number on the right (CSS page margin boxes).
+    const cssStr = s => '"' + String(s).replace(/[\\"]/g, '\\$&').replace(/[\r\n]+/g, ' ') + '"';
+    out.push(`<style>@media print { @page { @bottom-left { content: ${cssStr((info.name || 'Untitled project') + ' · Pump Design Calculations')}; } @bottom-right { content: "Page " counter(page) " of " counter(pages); } } }</style>`);
     const logo = root.HA_LOGO;
     out.push(`<div class="brandline">${logo ? `<img src="${esc(logo)}" alt="Hydro-Action">` : '<span class="wordmark"><span class="wm-h">hydro</span><span class="wm-dot">·</span><span class="wm-a">action</span></span>'}<span class="tag">Hydro-Action, Inc. · TDH &amp; Flow Calculator v${esc(C.VERSION)}</span></div>`);
     out.push(`<div class="rhead"><div><h1>Pump Design Calculations</h1><div style="font-size:11pt;margin-top:2px">Total Dynamic Head &amp; Flow: ${esc(sysName)}</div>
@@ -57,8 +61,8 @@
       }
     }
 
-    // ---------------- 2. methods
-    out.push(`<h2>2. Design Basis &amp; Methods</h2>`);
+    // ---------------- 2. methods (starts page 2 in print, so page 1 is the summary page)
+    out.push(`<h2 class="newpage">2. Design Basis &amp; Methods</h2>`);
     const set = S.settings;
     if (set.method === 'DW') {
       out.push(eq('h<sub>f</sub> = f · (L / D) · v² / 2g, &nbsp; f = 0.25 / [log<sub>10</sub>(ε / 3.7D + 5.74 / Re<sup>0.9</sup>)]² (Swamee-Jain); f = 64/Re for Re &lt; 2300',
@@ -73,7 +77,10 @@
     if (S.systemType === 'spray' || (S.systemType === 'drip' && S.drip.emType === 'npc')) out.push(eq('q = k · P<sup>x</sup>, &nbsp; k = q<sub>ref</sub> / P<sub>ref</sub><sup>x</sup>', 'Emitter / nozzle discharge as a function of pressure P (psi).'));
     if (S.systemType === 'drip' && S.drip.emType !== 'npc') out.push(eq('q = q<sub>rated</sub> (constant)', 'Pressure-compensating emitters deliver their rated flow within the operating pressure range.'));
     if (D.net) out.push(`<p>The distribution network is analyzed outlet by outlet. Starting at the distal outlet with the required residual head, the calculation steps back toward the inlet, adding friction loss for the accumulated flow in each pipe segment plus any elevation change, and recomputing each outlet's discharge at its local pressure. Each lateral or line on the manifold is solved for the pressure available at its connection. The manifold inlet head is then adjusted until the <i>most critical</i> outlet in the zone receives exactly the design residual head.</p>`);
-    out.push(`<p>TDH = static head + distal residual head + force main losses + indexing valve loss${D.tee ? ` + ${S.systemType === 'spray' ? 'header' : 'manifold'} inlet tee loss` : ''} + distribution network losses + supplemental device losses. Conversion: 1 psi = ${C.FT_PER_PSI} ft of water.</p>`);
+    // TDH terms listed only where they apply to this design
+    const outletTerm = D.net ? 'distal residual head' : S.systemType === 'discharge' ? (R.model.details.mode === 'main' ? 'sewer main pressure head' : 'outlet head (tailwater + exit loss)') : 'residual head at discharge';
+    const terms = ['static head', outletTerm, 'force main losses', S.valve.use && 'indexing valve loss', D.tee && `${S.systemType === 'spray' ? 'header' : 'manifold'} inlet tee loss`, D.net && 'distribution network losses', D.addons.length && 'supplemental device losses'].filter(Boolean);
+    out.push(`<p>TDH = ${terms.join(' + ')}. Conversion: 1 psi = ${C.FT_PER_PSI} ft of water.</p>`);
     out.push(tbl([['Fitting'], ['K', 'n']], C.FITTINGS.map(x => tr([x.label, [f(n(set.K[x.k]), 2), 'n']]))));
     out.push(kv([
       ['Friction method', set.method === 'DW' ? 'Darcy-Weisbach' : 'Hazen-Williams'],
@@ -131,11 +138,11 @@
     if (fitRows.length) out.push(`<h3>Fittings</h3>` + tbl([['Segment'], ['Fitting'], ['Qty', 'n'], ['K', 'n'], ['Qty × K', 'n']], fitRows));
     const g0 = D.segs.find(g => g.L > 0);
     if (g0) {
-      out.push(`<h3>Sample calculation: ${g0.label.toLowerCase()} at Q = ${f(g0.Q, 2)} gpm</h3>`);
+      out.push(`<div class="avoid"><h3>Sample calculation: ${g0.label.toLowerCase()} at Q = ${f(g0.Q, 2)} gpm</h3>`);
       out.push(eq(`v = 0.4085 × ${f(g0.Q, 2)} / ${f(g0.d, 3)}² = <b>${f(g0.v, 2)} ft/s</b>`));
       if (set.method !== 'DW') out.push(eq(`h<sub>f</sub> = ${C.HW_K.toFixed(2)} × ${f(g0.L, 1)} × ${f(g0.Q, 2)}<sup>1.852</sup> / (${set.cPVC}<sup>1.852</sup> × ${f(g0.d, 3)}<sup>4.8704</sup>) = <b>${f(g0.hf, 2)} ft</b>`));
       else out.push(eq(`h<sub>f</sub> = f · (${f(g0.L, 1)} / ${f(g0.d / 12, 4)}) · ${f(g0.v, 2)}² / (2 × ${C.G}) = <b>${f(g0.hf, 2)} ft</b>`));
-      out.push(eq(`h<sub>m</sub> = ${f(g0.sumK, 2)} × ${f(g0.v, 2)}² / (2 × ${C.G}) = <b>${f(g0.hm, 2)} ft</b>`));
+      out.push(eq(`h<sub>m</sub> = ${f(g0.sumK, 2)} × ${f(g0.v, 2)}² / (2 × ${C.G}) = <b>${f(g0.hm, 2)} ft</b>`) + `</div>`);
     }
 
     // ---------------- 5. valve & add-ons
@@ -183,7 +190,7 @@
 
     // ---------------- 7. volumes & dosing
     out.push(`<h2>${sec++}. Pipe Volumes &amp; Dosing</h2>`);
-    out.push(eq('V = 0.0408 · d² · L', 'Pipe volume (gal), with d = inside diameter (in) and L = length (ft).'));
+    out.push(`<div class="avoid">` + eq('V = 0.0408 · d² · L', 'Pipe volume (gal), with d = inside diameter (in) and L = length (ft).'));
     const V = R.volumes;
     const I = V.items;
     const vr = (label, it) => tr([label, it ? esc(it.pipe) : '—', [it ? f(it.d, 3) : '—', 'n'], [it ? (it.count > 1 ? `${it.count} × ${f(it.lenEach, 1)}` : f(it.lenEach, 1)) : '—', 'n'], [it ? f(it.L, 1) : '0.0', 'n'], [it ? f(it.gpf, 4) : '—', 'n'], [f(it ? it.vol : 0, 2), 'n']]);
@@ -191,16 +198,18 @@
     out.push(tbl([['Component'], ['Pipe'], ['ID (in)', 'n'], ['Runs × length (ft)', 'n'], ['Total L (ft)', 'n'], ['gal/ft', 'n'], ['Volume (gal)', 'n']], [
       vr('Discharge assembly', I.discharge),
       vr('Force main' + (S.valve.use ? ' (pump to valve)' : ''), I.before),
-      vt('Total, pump to valve', V.beforeValve),
+      vt(S.valve.use ? 'Total, pump to valve' : 'Total, discharge assembly and force main', V.beforeValve),
       ...(S.valve.use ? [vr('Zone force main (valve to manifold)', I.after)] : []),
       ...(I.manifold ? [vr(esc(I.manifold.label), I.manifold)] : []),
       ...(I.laterals ? [vr(esc(I.laterals.label) + (S.systemType === 'spray' ? '' : ' (per zone)'), I.laterals)] : []),
-      vt('Total, valve to laterals', V.afterValve)
-    ]));
+      // second subtotal only when there is piping after the valve or a distribution network
+      ...(S.valve.use || I.manifold || I.laterals ? [vt(S.valve.use ? 'Total, valve to laterals' : 'Total, distribution network', V.afterValve)] : [])
+    ]) + `</div>`);
     const sv = I.before || I.discharge;
     if (sv) out.push(eq(`Example: ${sv.label.toLowerCase()}: gal/ft = 0.0408 × ${f(sv.d, 3)}² = ${f(sv.gpf, 4)}; &nbsp; V = ${f(sv.gpf, 4)} × ${f(sv.L, 1)} = <b>${f(sv.vol, 2)} gal</b>`));
     const ds = R.dose;
     const minRow = ds.minDose !== null ? [[`Minimum dose = ${ds.minMult} × lateral volume`, f(ds.minDose, 1) + ' gal']] : [];
+    out.push('<div class="avoid">'); // dosing table and its note print together
     if (ds.valid && ds.mode === 'demand') {
       out.push(`<h3>Dosing method: demand dosing (float controlled)</h3>`);
       out.push(`<p class="small">Drawdown height and volume are based on the selected pump tank specifications and the float elevations set in that tank.</p>`);
@@ -245,13 +254,21 @@
       ]));
       out.push(`<p class="small">The float settings depend on the pump tank's size and shape. Set the pump-on and pump-off floats from the tank manufacturer's chart${ds.minGross !== null ? ' so the drawdown volume is at least the minimum shown above' : ''}.</p>`);
     }
+    out.push('</div>');
 
     // ---------------- 8. system curve
     out.push(`<h2>${sec++}. System Curve${pumps.length ? ' &amp; Pump Selection' : ''}</h2>`);
-    if (chartData) out.push(`<div class="chart avoid">${root.Chart.render(Object.assign({ width: 720, height: 430 }, chartData))}</div>`);
+    // chart, legend and point table print together
+    out.push(`<div class="avoid">`);
+    if (chartData) out.push(`<div class="chart">${root.Chart.render(Object.assign({ width: 720, height: 400 }, chartData))}</div>`);
     out.push(`<p class="small">Legend: blue = system curve${R.curveMin ? ' at maximum main pressure; dashed blue = system curve at minimum main pressure' : ''}; red circle = design point${pumps.length ? '; colored lines = pump curves; green circles = operating points' : ''}. ${R.model && R.model.variable ? 'The system curve was generated by re-solving the distribution network at a range of distal heads.' : R.model && R.model.kind === 'discharge' ? 'The system curve was calculated directly at each flow, including force main friction, fittings and the outlet requirement.' : 'The system curve assumes a constant residual requirement, with friction losses varying with Q<sup>1.852</sup>.'}</p>`);
     const cpts = R.curve.filter(p => p.Q <= G.Q * 2.5);
-    out.push(tbl([['Q (gpm)', 'n'], ...cpts.slice(0, 1).map(() => ['TDH (ft)', 'n'])], cpts.map(p => tr([[f(p.Q, 1), 'n'], [f(p.H, 1), 'n']]))).replace('<table', '<table style="width:auto;min-width:40%"'));
+    // system curve points as a horizontal table (Q row over TDH row), 10 points per block
+    for (let i = 0; i < cpts.length; i += 10) {
+      const blk = cpts.slice(i, i + 10);
+      out.push(tbl(null, [tr([['<b>Q (gpm)</b>', 'lbl'], ...blk.map(p => [f(p.Q, 1), 'n'])]), tr([['<b>TDH (ft)</b>', 'lbl'], ...blk.map(p => [f(p.H, 1), 'n'])])], { cls: 'curvepts' }));
+    }
+    out.push(`</div>`);
 
     // ---------------- 9. checks
     out.push(`<h2>${sec++}. Design Checks</h2>`);
@@ -259,17 +276,17 @@
     else out.push('<p>No cautions.</p>');
 
     // ---------------- 10. notes
-    out.push(`<h2>${sec++}. Notes &amp; Assumptions</h2><ul class="small">
+    // notes, signature and version line print together
+    out.push(`<div class="avoid"><h2>${sec++}. Notes &amp; Assumptions</h2><ul class="small">
       <li>Water at 60 °F. Effluent is assumed to have the hydraulic properties of clean water.</li>
       <li>Static head is measured from the pump-off liquid level to the ${C.staticRef(S)}.${D.net ? ' Elevation changes within the dispersal area (along laterals and between laterals) are included in the distribution network analysis, not in the static head.' : ''} If the force main crosses a point higher than this, the static head must be taken to that point.</li>
-      <li>Pipe inside diameters are nominal average values for the pipe class shown. Verify them against the manufacturer's data for the pipe being installed.</li>
-      <li>Distribution outlets are assumed to be evenly spaced, with the last outlet at the distal end of each lateral.</li>
+      ${D.net ? '<li>Distribution outlets are assumed to be evenly spaced, with the last outlet at the distal end of each lateral.</li>' : ''}
       ${minorLossNote(S, R)}
       <li>Manufacturer data (pump curves, valve and filter losses, emitter or nozzle ratings) must be verified for the specific products installed.</li>
       <li>This report documents the hydraulic calculations only. Comply with all applicable local and state regulations for system sizing, setbacks, and component requirements.</li></ul>`);
     if (info.notes) out.push(`<h3>Project notes</h3><p style="white-space:pre-wrap">${esc(info.notes)}</p>`);
     out.push(`<div class="sig"><div>Prepared by${info.designer ? ': ' + esc(info.designer) : ''}</div><div>Date</div></div>`);
-    out.push(stamp());
+    out.push(stamp() + '</div>');
     out.push(`</div>`);
     return out.join('');
   }

@@ -170,6 +170,10 @@
     // report matches the calculations
     let html = '';
     try { html = Report.build(s, R, { system: R.curve, duty: [], pumps: [] }); } catch (e) { check(false, name, 'report threw: ' + e.message); return; }
+    // print layout groups (div wrappers) must open and close evenly
+    { const o = (html.match(/<div\b/g) || []).length, c = (html.match(/<\/div>/g) || []).length; check(o === c, name, `report has ${o} <div> and ${c} </div>`); }
+    check(!/Pipe inside diameters are nominal/.test(html), name, 'report still has the pipe inside diameter note');
+    check(!!R.design.net === /evenly spaced/.test(html), name, 'outlet spacing note shown for a design without a distribution network (or missing for one with it)');
     const doc = txt(html);
     const t = doc.textContent;
     const badTxt = t.match(/NaN|undefined|Infinity|\bnull\b|\[object/g);

@@ -14,6 +14,9 @@ Every report prints the calculator version that produced it. Each release below 
 
 ## Unreleased (next: 2.0.0, because TDH results change)
 - **Changes results:** a tee at the manifold or spray header inlet (flow through branch, K = 1.8) is now included in the TDH wherever a manifold serves two or more laterals or lines. It is computed at the manifold inlet velocity (each half when center-fed) and shown as its own line in the TDH summary and report. Typical increase: about 1 ft for the default 4-lateral LPD (1-1/2" manifold, 5.9 ft/s); under 0.2 ft for drip; none for a single lateral or single spray line.
+- Printed report layout: page 1 is the summary page (results, schematic, pump table) and Methods starts on page 2; tables, equation groups, the dosing table, and the notes with the signature block stay together on one page (tables over 24 rows split with the header row repeated); every page has a footer with the project name and "Page X of Y"; tighter row spacing on paper; system curve points print as a compact horizontal table under the chart.
+- Report wording: removed the note about pipe inside diameters; the outlet-spacing note and the TDH equation's terms appear only where they apply; the pipe volume subtotals are labeled for designs without an indexing valve or distribution network.
+- A link ending in `#params`, `#chart` or `#report` opens that tab.
 - LPD minimum dose as a multiple of lateral volume now defaults to 0, which turns the minimum dose check off. Enter a value (for example 5) to check the net dose against it. Projects saved with a value keep it.
 - The design settings card was removed. Hazen-Williams C = 150, the standard fitting K-values, and the 2–5 ft/s velocity guidelines are fixed. Projects saved with other values are recalculated with these when opened.
 - The high manifold velocity caution is shortened to the velocity, the 5 ft/s guideline, and "increase the manifold size".
