@@ -4,3 +4,5 @@
 Thumbs.db
 desktop.ini
 .DS_Store
+# Manufacturer spec sheets: kept locally as the source for js/pump-data.js; not redistributed
+Pumps/*.pdf
