@@ -73,7 +73,7 @@
     if (S.systemType === 'spray' || (S.systemType === 'drip' && S.drip.emType === 'npc')) out.push(eq('q = k · P<sup>x</sup>, &nbsp; k = q<sub>ref</sub> / P<sub>ref</sub><sup>x</sup>', 'Emitter / nozzle discharge as a function of pressure P (psi).'));
     if (S.systemType === 'drip' && S.drip.emType !== 'npc') out.push(eq('q = q<sub>rated</sub> (constant)', 'Pressure-compensating emitters deliver their rated flow within the operating pressure range.'));
     if (D.net) out.push(`<p>The distribution network is analyzed outlet by outlet. Starting at the distal outlet with the required residual head, the calculation steps back toward the inlet, adding friction loss for the accumulated flow in each pipe segment plus any elevation change, and recomputing each outlet's discharge at its local pressure. Each lateral or line on the manifold is solved for the pressure available at its connection. The manifold inlet head is then adjusted until the <i>most critical</i> outlet in the zone receives exactly the design residual head.</p>`);
-    out.push(`<p>TDH = static head + distal residual head + force main losses + indexing valve loss + distribution network losses + supplemental device losses. Conversion: 1 psi = ${C.FT_PER_PSI} ft of water.</p>`);
+    out.push(`<p>TDH = static head + distal residual head + force main losses + indexing valve loss${D.tee ? ` + ${S.systemType === 'spray' ? 'header' : 'manifold'} inlet tee loss` : ''} + distribution network losses + supplemental device losses. Conversion: 1 psi = ${C.FT_PER_PSI} ft of water.</p>`);
     out.push(tbl([['Fitting'], ['K', 'n']], C.FITTINGS.map(x => tr([x.label, [f(n(set.K[x.k]), 2), 'n']]))));
     out.push(kv([
       ['Friction method', set.method === 'DW' ? 'Darcy-Weisbach' : 'Hazen-Williams'],
@@ -162,6 +162,7 @@
       D.net ? 'residual' : S.systemType === 'discharge' ? (R.model.details.mode === 'main' ? 'main pressure' : 'outlet') : 'residual', resid);
     comp('Force main losses (pipe + fittings)', 'force main', s => s.segTotal);
     if (S.valve.use) comp('Indexing valve loss', 'valve', s => s.valveLoss);
+    if (D.tee) comp(`${S.systemType === 'spray' ? 'Header' : 'Manifold'} inlet tee (K = ${f(D.tee.K, 1)})`, 'inlet tee', s => s.teeLoss);
     if (D.net) {
       comp('Manifold friction loss', 'manifold', s => s.net.manLoss);
       comp('Lateral friction loss (critical lateral)', 'lateral', s => s.net.critical.latLoss);
@@ -285,7 +286,9 @@
     const t = S.systemType;
     if (!R.design.net) return '';
     const parts = t === 'spray' ? 'within the header, at line connections, and at head risers' : t === 'drip' ? 'within the supply manifold and at dripline connections' : 'within the manifold and at lateral connections';
-    return `<li>Fittings up to the ${t === 'spray' ? 'header' : 'manifold'} inlet are included with the force main fittings. Minor (fitting) losses ${parts} are small compared with the residual head and pipe friction and are not included.</li>`;
+    const m = t === 'spray' ? 'header' : 'manifold';
+    const teeTxt = R.design.tee ? ` A tee at the ${m} inlet (flow through branch, K = ${f(R.design.tee.K, 1)}) is included at the ${m} inlet velocity.` : '';
+    return `<li>Fittings up to the ${m} inlet are included with the force main fittings.${teeTxt} Minor (fitting) losses ${parts} are small compared with the residual head and pipe friction and are not included.</li>`;
   }
 
   function distributionSection(S, R, sec) {
@@ -344,7 +347,8 @@
       out.push(kv([
         ['Number of connections analyzed' + (nn.mult > 1 ? ' (one half of center-fed manifold)' : ''), nn.nCalc],
         ['Manifold friction loss', f(nn.manLoss, 2) + ' ft'],
-        ...(s.manInlet ? [[`Manifold inlet velocity${s.manInlet.center ? ' (each half)' : ''} = 0.4085 × ${f(s.manInlet.Q, 2)} / ${f(s.manInlet.d, 3)}²`, `${f(s.manInlet.v, 2)} ft/s (v²/2g = ${f(s.manInlet.hv, 3)} ft)`]] : []),
+        ...(s.manInlet ? [[`Manifold inlet velocity${s.manInlet.center ? ' (each half)' : ''} = 0.4085 × ${f(s.manInlet.Q, 2)} / ${f(s.manInlet.d, 3)}²`, `${f(s.manInlet.v, 2)} ft/s (v²/2g = ${f(s.manInlet.hv, 3)} ft)`],
+          [`Manifold inlet tee loss = K × v²/2g = ${f(s.tee.K, 1)} × ${f(s.tee.hv, 3)}`, f(s.teeLoss, 2) + ' ft']] : []),
         ['Head required at manifold inlet', `${f(s.hNet, 2)} ft (${f(s.hNet / C.FT_PER_PSI, 2)} psi)`],
         ['Outlet flow: minimum / maximum', `${f(nn.qMin, 4)} / ${f(nn.qMax, 4)} gpm`],
         ['Flow variation = (q<sub>max</sub> − q<sub>min</sub>) / q<sub>max</sub>', f(nn.variation, 2) + ' %'],

@@ -12,6 +12,12 @@ Every report prints the calculator version that produced it. Each release below 
 4. Add an entry below. For a major change, list which results move and by how much.
 5. Commit, tag the commit with the version (`git tag v1.0.1`), and push (`git push --follow-tags`). GitHub Pages publishes the new version about a minute later.
 
+## Unreleased (next: 2.0.0, because TDH results change)
+- **Changes results:** a tee at the manifold or spray header inlet (flow through branch, K = 1.8) is now included in the TDH wherever a manifold serves two or more laterals or lines. It is computed at the manifold inlet velocity (each half when center-fed) and shown as its own line in the TDH summary and report. Typical increase: about 1 ft for the default 4-lateral LPD (1-1/2" manifold, 5.9 ft/s); under 0.2 ft for drip; none for a single lateral or single spray line.
+- The design settings card was removed. Hazen-Williams C = 150, the standard fitting K-values, and the 2–5 ft/s velocity guidelines are fixed. Projects saved with other values are recalculated with these when opened.
+- The high manifold velocity caution is shortened to the velocity, the 5 ft/s guideline, and "increase the manifold size".
+- Velocity cautions and the report say that velocity limits are for surge (maximum) and settling (minimum), and that friction at the actual velocity is already in the TDH.
+
 ## 1.0.0 (2026-11-12)
 First numbered release.
 

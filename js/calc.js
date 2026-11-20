@@ -405,7 +405,7 @@
   }
 
   // ---------------------------------------------------------------- scenario
-  function buildScenario(s, label, Q, hNet, Qd, net, extra) {
+  function buildScenario(s, label, Q, hNet, Qd, net, extra, model) {
     const set = s.settings;
     const fr = frFor(set);
     const sf = num(set.frictionSF);
@@ -427,8 +427,22 @@
     const addonTotal = addons.reduce((t, a) => t + a.ft, 0);
     const lift = num(s.lift);
     const segTotal = segs.reduce((t, x) => t + x.total, 0);
-    const TDH = lift + segTotal + valveLoss + addonTotal + hNet;
-    return Object.assign({ label, Q, hNet, net, segs, valveLoss, valveScale, valveQRef: num(s.valve.q) > 0 ? num(s.valve.q) : Qd, addons, addonTotal, lift, segTotal, TDH, scale, sf }, extra || {});
+    const tee = inletTee(s, model, Q);
+    const teeLoss = tee ? tee.loss : 0;
+    const TDH = lift + segTotal + valveLoss + addonTotal + teeLoss + hNet;
+    return Object.assign({ label, Q, hNet, net, segs, valveLoss, valveScale, valveQRef: num(s.valve.q) > 0 ? num(s.valve.q) : Qd, addons, addonTotal, lift, segTotal, tee, teeLoss, manInlet: tee, TDH, scale, sf }, extra || {});
+  }
+  /**
+   * Tee at the manifold (or spray header) inlet, where the force main joins a manifold serving more than one lateral.
+   * Loss = K(tee, flow through branch) × v²/2g at the manifold velocity of the flow entering it (each half when center-fed).
+   */
+  function inletTee(s, model, Q) {
+    if (!model || !model.spec || !(model.spec.nConn > 1) || !(Q > 0)) return null;
+    const center = model.spec.manFeed === 'center';
+    const Qin = center ? Q / 2 : Q;
+    const K = num((s.settings && s.settings.K || {}).teeBr, FITTINGS.find(f => f.k === 'teeBr').K);
+    const v = velocity(Qin, model.spec.dMan), hv = velHead(v);
+    return { Q: Qin, d: model.spec.dMan, v, hv, K, loss: K * hv, center };
   }
   function hasFittings(seg) { return num(seg.kOther) > 0 || FITTINGS.some(f => num(seg.fit && seg.fit[f.k]) > 0); }
 
@@ -443,7 +457,7 @@
 
       if (model) {
         const net = networkSolve(model.spec, model.hEnd);
-        design = buildScenario(s, s.systemType === 'drip' ? 'Dosing' : 'Design', net.Q, net.hInlet, net.Q, net);
+        design = buildScenario(s, s.systemType === 'drip' ? 'Dosing' : 'Design', net.Q, net.hInlet, net.Q, net, null, model);
         R.model = model;
       } else if (s.systemType === 'discharge') {
         R.model = dischargeModel(s);
@@ -464,17 +478,9 @@
         const fspec = Object.assign({}, model.spec, { run: Object.assign({}, model.spec.run, { endFlow: fl.qFlush }) });
         const fnet = networkSolve(fspec, fl.hEnd);
         R.flush = fl;
-        R.scenarios.push(buildScenario(s, 'Flushing', fnet.Q, fnet.hInlet, design.Q, fnet, { flush: fl }));
+        R.scenarios.push(buildScenario(s, 'Flushing', fnet.Q, fnet.hInlet, design.Q, fnet, { flush: fl }, model));
       }
 
-      // Manifold inlet velocity (minor losses at the inlet/laterals are neglected; this flags when that matters)
-      if (model && model.spec.nConn > 1) {
-        R.scenarios.forEach(sc => {
-          const Qin = sc.net.Qhalf; // flow entering the manifold (each half when center-fed)
-          const v = velocity(Qin, model.spec.dMan);
-          sc.manInlet = { Q: Qin, d: model.spec.dMan, v, hv: velHead(v), center: sc.net.mult > 1 };
-        });
-      }
 
       R.design = design;
       R.governing = R.scenarios.reduce((a, b) => (b.TDH > a.TDH ? b : a));
@@ -585,7 +591,7 @@
       // Range extends to several times the design flow so pump operating points (including oversized pumps) fall on the curve
       [0.03, 0.1, 0.2, 0.35, 0.55, 0.75, 1, 1.3, 1.7, 2.2, 3, 4, 5.5, 7.5, 10, 14, 20, 28, 40, 60, 90, 140].forEach(f => {
         const net = networkSolve(model.spec, model.hEnd * f);
-        pts.push({ Q: net.Q, H: buildScenario(s, '', net.Q, net.hInlet, Qd, null).TDH, hNet: net.hInlet });
+        pts.push({ Q: net.Q, H: buildScenario(s, '', net.Q, net.hInlet, Qd, null, null, model).TDH, hNet: net.hInlet });
       });
     } else {
       // Constant-pressure requirement (PC drip, gravity, known device): network losses scale with Q^1.852
@@ -593,7 +599,7 @@
       const dyn = Math.max(0, design.hNet - hRes);
       flowGrid(Qd).forEach(Q => {
         const hNet = hRes + dyn * Math.pow(Q / Qd, 1.852);
-        pts.push({ Q, H: buildScenario(s, '', Q, hNet, Qd, null).TDH, hNet });
+        pts.push({ Q, H: buildScenario(s, '', Q, hNet, Qd, null, null, model).TDH, hNet });
       });
       pts[0].hNet = hRes; pts[0].H = num(s.lift) + hRes;
     }

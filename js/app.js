@@ -302,6 +302,8 @@
   }
 
   function renderParams() {
+    if (!R || R.sys !== S.systemType) recompute();
+    const teeHelp = R && R.design && R.design.tee ? `<div class="help" style="font-size:12px;color:var(--faint);margin-top:8px">The tee where the force main joins the ${S.systemType === 'spray' ? 'header' : 'manifold'} is added automatically (K = ${R.design.tee.K}). Do not include it in the fittings above.</div>` : '';
     const valve = S.valve.use;
     const addRows = S.addons.map((a, i) => `<tr><td><div class="inp plain"><input data-path="addons.${i}.label" value="${esc(a.label)}" placeholder="Device (e.g. disc filter)"></div></td>
       <td><div class="inp"><input type="number" step="any" data-path="addons.${i}.val" data-type="num" value="${esc(a.val)}"><select data-path="addons.${i}.unit" style="width:auto;border-left:1px solid var(--border);background:var(--surface-2)"><option ${a.unit === 'ft' ? 'selected' : ''}>ft</option><option ${a.unit === 'psi' ? 'selected' : ''}>psi</option></select></div></td>
@@ -334,7 +336,7 @@
               <div class="help" style="font-size:12px;color:var(--faint);margin:-2px 0 6px">The line from the indexing valve outlet to the zone manifold. It can be a different size from the force main that supplies the valve. Enter the critical zone, usually the longest run or the highest zone.</div>
               ${fPipe('transport.after.pipe', 'Zone force main pipe')}
               ${fNum('transport.after.L', 'Zone force main length', 'ft')}
-              ${fFittings('transport.after')}` : ''}`)}
+              ${fFittings('transport.after')}` : ''}${teeHelp}`)}
           ${distributionInputs()}
           ${card('Supplemental device losses', `
             <table class="addons"><tbody>${addRows}</tbody></table>
@@ -535,6 +537,7 @@
       tdh += rr(s.net ? 'Distal residual head' : t === 'discharge' ? residLbl : 'Residual head', fmt(resid2, 1), 'ft');
       tdh += rr('Force main losses', fmt(s.segTotal, 1), 'ft');
       if (S.valve.use) tdh += rr('Valve loss', fmt(s.valveLoss, 1), 'ft');
+      if (s.tee) tdh += rr((t === 'spray' ? 'Header' : 'Manifold') + ' inlet tee', fmt(s.teeLoss, 1), 'ft');
       if (s.net) tdh += rr('Distribution network losses', fmt(s.hNet - resid2, 1), 'ft');
       if (s.addonTotal) tdh += rr('Supplemental device losses', fmt(s.addonTotal, 1), 'ft');
       tdh += rr('Total dynamic head', fmt(s.TDH, 1), 'ft', { cls: 'total' });

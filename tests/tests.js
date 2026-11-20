@@ -57,9 +57,18 @@
     R.scenarios.forEach(sc => {
       const w = `${name} [${sc.label}]`;
       // TDH = sum of its parts
-      const sum = sc.lift + sc.segTotal + sc.valveLoss + sc.addonTotal + sc.hNet;
+      const sum = sc.lift + sc.segTotal + sc.valveLoss + sc.addonTotal + sc.teeLoss + sc.hNet;
       check(near(sum, sc.TDH, 1e-9, 1e-9), w, `TDH ${sc.TDH} != sum of parts ${sum}`);
       check(near(sc.lift, n(s.lift), 0, 1e-12), w, 'static head not equal to input');
+
+      // manifold / header inlet tee: K(tee branch) × v²/2g at the manifold velocity, only where a manifold serves 2+ connections
+      const sp = R.model && R.model.spec;
+      if (sp && sp.nConn > 1) {
+        const Qin = sp.manFeed === 'center' ? sc.Q / 2 : sc.Q;
+        const exp = n(set.K.teeBr) * hv(vel(Qin, sp.dMan));
+        check(near(sc.teeLoss, exp, 1e-6, 1e-9), w, `inlet tee loss ${sc.teeLoss} vs ${exp}`);
+        if (sc.net) check(near(Qin, sc.net.Qhalf, 1e-9, 1e-9), w, `tee flow ${Qin} vs manifold inlet flow ${sc.net.Qhalf}`);
+      } else check(sc.teeLoss === 0 && !sc.tee, w, 'inlet tee added without a manifold');
 
       // force main segments vs independent formulas
       sc.segs.forEach(g => {
