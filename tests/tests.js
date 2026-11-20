@@ -456,10 +456,20 @@
     });
   }
 
+  // ------------------------------------------------------------ release: index.html cache-busting matches the version
+  function runRelease() {
+    let html = '';
+    try { const x = new XMLHttpRequest(); x.open('GET', '../index.html', false); x.send(); html = x.status === 200 ? x.responseText : ''; } catch (e) { html = ''; }
+    if (!html) { note('release', 'could not read index.html to check the ?v= links'); return; }
+    const links = html.match(/(?:src|href)="(?:js|css)\/[^"]+"/g) || [];
+    check(links.length >= 7, 'release', `expected 7 local script/style links in index.html, found ${links.length}`);
+    links.forEach(l => check(l.includes('?v=' + C.VERSION + '"'), 'release', `${l} in index.html does not end in ?v=${C.VERSION} (VERSION in js/calc.js)`));
+  }
+
   function run() {
     const t0 = performance.now();
     checks = 0; runs = 0; fails.length = 0; notes.length = 0;
-    runHandCalcs(); runMatrix(); runInvalid(); runTrends(); runPumps(); runPlausibility(); runReference();
+    runHandCalcs(); runMatrix(); runInvalid(); runTrends(); runPumps(); runPlausibility(); runReference(); runRelease();
     return { scenarios: runs, checks, fails: fails.slice(), notes: notes.slice(), refs: refs.slice(), version: C.VERSION, ms: Math.round(performance.now() - t0) };
   }
 

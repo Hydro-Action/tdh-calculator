@@ -5,7 +5,7 @@ Every report prints the calculator version that produced it. Each release below 
 ## Release procedure
 1. Make the change.
 2. Open `tests/run.html` (served from the project folder). All checks must pass, including the active reference cases.
-3. Change `VERSION` and `RELEASE_DATE` at the top of `js/calc.js`:
+3. Change `VERSION` and `RELEASE_DATE` at the top of `js/calc.js`, and the `?v=` number on the CSS and script links in `index.html` to match (this makes browsers load the new files; the test suite fails if they differ):
    - patch (1.0.**x**): wording, layout or report formatting; no calculated value changes
    - minor (1.**x**.0): new inputs, system types, checks or pumps; existing results unchanged
    - major (**x**.0.0): a change that moves the result of an existing design (method, constant, default K-value or C-factor)

@@ -7,7 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@500;600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="css/app.css">
+  <!-- ?v= on the CSS and script links must match VERSION in js/calc.js (the test suite checks this). Changing it makes browsers load the new files after a release. -->
+  <link rel="stylesheet" href="css/app.css?v=1.0.0">
 </head>
 <body>
   <header class="appbar no-print">
@@ -49,11 +50,11 @@
   <dialog id="pumpDialog"></dialog>
   <div class="toast" id="toast"></div>
 
-  <script src="js/calc.js"></script>
-  <script src="js/pump-data.js"></script>
-  <script src="js/chart.js"></script>
-  <script src="js/diagram.js"></script>
-  <script src="js/report.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/calc.js?v=1.0.0"></script>
+  <script src="js/pump-data.js?v=1.0.0"></script>
+  <script src="js/chart.js?v=1.0.0"></script>
+  <script src="js/diagram.js?v=1.0.0"></script>
+  <script src="js/report.js?v=1.0.0"></script>
+  <script src="js/app.js?v=1.0.0"></script>
 </body>
 </html>
